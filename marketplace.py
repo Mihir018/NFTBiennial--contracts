@@ -134,7 +134,9 @@ class Marketplace(sp.Contract):
             next_offer_id = sp.nat(0),
             offers = Offer().set_type(),
             platform_fees = sp.nat(20000),
-            pause = sp.bool(False)
+            pause = sp.bool(False),
+            default_split = sp.big_map(l={}, tkey = sp.TString, tvalue = sp.TRecord(address = sp.TList(sp.TAddress),
+                                                                                   amount = sp.TNat)),
         )
 
     def transfer_token(self, contract, params_):
@@ -182,6 +184,19 @@ class Marketplace(sp.Contract):
         sp.verify(self.data.mods.contains(_moderator), "ADDRESS_NAT_MODERATOR")
         self.data.mods.remove(_moderator)
         sp.emit(sp.record(moderator=_moderator),tag="MODERATOR_REMOVED")
+
+    # @sp.entry_point
+    # def update_splits(self, params):
+    #     sp.verify(self.data.mods.contains(sp.sender), "NOT_MODERATOR")
+    #     sp.set_type(params.name, sp.TString)
+    #     sp.set_type(
+    #         params.split_record,
+    #         sp.TRecord(
+    #             address=sp.TList(sp.TAddress),
+    #             amount=sp.TNat
+    #         ),
+    #     ).layout(("address","amount"))
+    #     self.data.default_split[params.name] = params.split_record
     
     @sp.entry_point
     def update_platform_fees(self, platform_fees):
@@ -219,11 +234,12 @@ class Marketplace(sp.Contract):
             ]
         self.transfer_token(self.data.offers[offer_id].token.address, _params)
         transfer_amount = sp.local("transfer_amount", self.data.offers[offer_id].amount)
-        sp.send(self.data.fund_operator, sp.split_tokens(transfer_amount.value, self.data.platform_fees, 1000000))
-        transfer_amount.value = transfer_amount.value - sp.split_tokens(transfer_amount.value, self.data.platform_fees, 1000000)
+        creator_amount = sp.local("transfer_amount", self.data.offers[offer_id].amount)
+        # sp.send(self.data.fund_operator, sp.split_tokens(transfer_amount.value, self.data.platform_fees, 1000000))
+        # transfer_amount.value = transfer_amount.value - sp.split_tokens(transfer_amount.value, self.data.platform_fees, 1000000)
         sp.for txn in self.data.offers[offer_id].shares:
-            sp.send(txn.recipient, sp.split_tokens(transfer_amount.value, txn.amount, 1000000))
-            transfer_amount.value = transfer_amount.value - sp.split_tokens(transfer_amount.value, txn.amount, 1000000)
+            sp.send(txn.recipient, sp.split_tokens(transfer_amount.value, txn.amount, 10000))
+            transfer_amount.value = transfer_amount.value - sp.split_tokens(transfer_amount.value, txn.amount, 10000)
         sp.send(sp.sender, transfer_amount.value)
         del self.data.offers[offer_id]
         sp.emit(sp.record(offer_id=offer_id),tag="OFFER_FULFILLED")
@@ -257,12 +273,13 @@ class Marketplace(sp.Contract):
         sp.verify(self.data.asks.contains(ask_id), "INVALID_ASK_ID")
         sp.verify(sp.amount == self.data.asks[ask_id].amount, "INVALID_AMOUNT")
         transfer_amount = sp.local("transfer_amount", sp.amount)
-        sp.send(self.data.fund_operator, sp.split_tokens(transfer_amount.value, self.data.platform_fees, 1000000))
-        transfer_amount.value = transfer_amount.value - sp.split_tokens(transfer_amount.value, self.data.platform_fees, 1000000)
+        creator_amount = sp.local("creator_amount", sp.amount)
+        # sp.send(self.data.fund_operator, sp.split_tokens(transfer_amount.value, self.data.platform_fees, 1000000))
+        # transfer_amount.value = transfer_amount.value - sp.split_tokens(transfer_amount.value, self.data.platform_fees, 1000000)
         sp.for txn in self.data.asks[ask_id].shares:
-            sp.send(txn.recipient, sp.split_tokens(transfer_amount.value, txn.amount, 1000000))
-            transfer_amount.value = transfer_amount.value - sp.split_tokens(transfer_amount.value, txn.amount, 1000000)
-        sp.send(self.data.asks[ask_id].creator, transfer_amount.value)
+            sp.send(txn.recipient, sp.split_tokens(transfer_amount.value, txn.amount, 10000))
+            creator_amount.value = creator_amount.value - sp.split_tokens(transfer_amount.value, txn.amount, 10000)
+        sp.send(self.data.asks[ask_id].creator, creator_amount.value)
         _params = [
                 Batch_transfer.item(from_=self.data.asks[ask_id].creator,
                                        txs=[
@@ -327,6 +344,12 @@ def test():
                 metadata=sp.map({"": sp.utils.bytes_of_string(
                     "https://ipfs.io/ipfs/bafyreias7kz2ryktu34afqwh56pltm32uxsecaxsootklwlsquw5gn3ptq/metadata.json/")}),
                 token_id=0).run(sender=admin)
+
+    # sc.h1("Update Splits - mark")
+    # sc += mp.update_splits(sp.record(name = "mark", split_record=sp.record(address=[mark], amount=400))).run(sender=admin)
+
+    # sc.h1("Update Splits - bob")
+    # sc += mp.update_splits(sp.record(name = "bob", split_record=sp.record(address=[bob], amount=500))).run(sender=admin)
     
     sc.h1("Marketplace: Create Offer")
     offer_data = sp.record(
@@ -337,7 +360,8 @@ def test():
         ),
         amount = sp.tez(1),
         expiry_time = sp.some(sp.timestamp(5)),
-        shares = [get_share.make(recipient= admin, amount=sp.nat(400))]
+        shares = [get_share.make(recipient= admin, amount=sp.nat(1350)),
+                 get_share.make(recipient=mark, amount=sp.nat(150))]
     )
     sc += mp.offer(offer_data).run(sender = admin, amount = sp.tez(1))
     sc.show([sp.record(contract_balance = mp.balance)])
@@ -349,7 +373,8 @@ def test():
         ),
         amount = sp.tez(5),
         expiry_time = sp.none,
-        shares = [get_share.make(recipient= admin, amount=sp.nat(400))]
+        shares = [get_share.make(recipient= admin, amount=sp.nat(1350)),
+                 get_share.make(recipient=mark, amount=sp.nat(150))]
     )
 
     sc += mp.offer(offer_data).run(sender = bob, amount = sp.tez(5))
@@ -380,11 +405,8 @@ def test():
         amount = sp.tez(100),
         editions = sp.nat(2),
         expiry_time = sp.some(sp.timestamp(5)),
-        shares = [get_share.make(recipient= admin, amount=sp.nat(40000)),
-                  get_share.make(recipient= mark, amount=sp.nat(5000)),
-                  get_share.make(recipient= mark, amount=sp.nat(5000)),
-                  get_share.make(recipient= mark, amount=sp.nat(50000)),
-                  get_share.make(recipient= bob, amount=sp.nat(5000))]
+        shares = [get_share.make(recipient= admin, amount=sp.nat(1350)),
+                 get_share.make(recipient=mark, amount=sp.nat(150))]
     )
     
     sc.h2("FA2: Update operators")
@@ -394,7 +416,7 @@ def test():
                     operator=mp.address,
                     token_id=0))]).run(sender=alice)
     
-    sc += mp.ask(ask_data).run(sender = alice)
+    sc += mp.ask(ask_data).run(sender=alice)
 
     ask_data = sp.record(
         creator = bob,
@@ -405,7 +427,8 @@ def test():
         amount = sp.tez(5),
         editions = sp.nat(5),
         expiry_time = sp.none,
-        shares = [get_share.make(recipient= admin, amount=sp.nat(100000))]
+        shares = [get_share.make(recipient= admin, amount=sp.nat(1350)),
+                 get_share.make(recipient=mark, amount=sp.nat(150))]
     )
     sc += mp.ask(ask_data).run(sender = bob)
     sc.show([sp.record(contract_balance = mp.balance)])
@@ -414,5 +437,8 @@ def test():
     sc += mp.fulfill_ask(sp.nat(0)).run(sender = elon, amount = sp.tez(100))
     sc.show([sp.record(contract_balance = mp.balance)])
 
+    sc.h1("Marketplace: Fulfill Ask")
+    sc += mp.fulfill_ask(sp.nat(1)).run(sender = elon, amount = sp.tez(5))
+    
     sc.h1("Marketplace: Retract Ask")
     sc += mp.retract_ask(sp.nat(1)).run(sender = bob)
