@@ -5,7 +5,7 @@ addresses = sp.io.import_stored_contract('addresses.py')
 
 class MainContract(sp.Contract):
     
-    def __init__(self,  nft_contract_address=addresses.NFT):
+    def __init__(self,  nft_contract_address=addresses.NFT, mint_index = sp.nat(0)):
         self.init(
 
             #The admin who will be able to accept the curators
@@ -19,6 +19,8 @@ class MainContract(sp.Contract):
 
             #The art ids that can be minted
             minted_art_ids=sp.set(t=sp.TNat),
+
+            mint_index = mint_index,
 
             # Minimum percentage of votes set by the user
             min_voting_percent = sp.nat(70),
@@ -241,7 +243,7 @@ class MainContract(sp.Contract):
                 token_id=sp.TNat,
                 amount=sp.TNat,
                 address=sp.TAddress,
-                metadata=sp.TMap(sp.TString, sp.TString),
+                metadata=sp.TMap(sp.TString, sp.TBytes),
             ),
             self.data.nft_contract_address,
             "mint",
@@ -249,14 +251,15 @@ class MainContract(sp.Contract):
 
         sp.transfer(
                     sp.record(
-                        token_id=_art_proposal_id,
+                        token_id=self.data.mint_index,
                         amount=self.data.art_proposal_details[_art_proposal_id].price,
                         address=sp.sender,
-                        metadata={"": self.data.art_proposal_details[_art_proposal_id].art_metadata},
+                        metadata={"": sp.utils.bytes_of_string('self.data.art_proposal_details[_art_proposal_id].art_metadata')},
                     ),
                     sp.tez(0),
                     c,
                 )
+        self.data.mint_index += 1
 
         
     #To toggle the current status of the contract so that it can be stopped or resumed
@@ -298,6 +301,8 @@ def test():
     scenario += dao.accept_curator(sp.address("tz1hJgZdhnRGvg5XD6pYxRCsbWh4jg5HQ476")).run(sender = admin)
     scenario += dao.reject_curator(sp.address("tz1hJgZdhnRGvg5XD6pYxRCsbWh4jg5HQ476")).run(sender = admin,valid=False)
     scenario += dao.vote_on_artproposal(1).run(sender = bob,now= sp.timestamp(20))
+    scenario += dao.vote_on_artproposal(2).run(sender = bob, now = sp.timestamp(20))
     scenario += dao.art_mint(1).run(sender = alice,now = sp.timestamp(32))
+    scenario += dao.art_mint(2).run(sender = charles, now = sp.timestamp(32))
     scenario += dao.revoke_curator(sp.address("tz1hJgZdhnRGvg5XD6pYxRCsbWh4jg5HQ476")).run(sender = admin)
     
