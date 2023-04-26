@@ -254,7 +254,7 @@ class MainContract(sp.Contract):
                         token_id=self.data.mint_index,
                         amount=self.data.art_proposal_details[_art_proposal_id].price,
                         address=sp.sender,
-                        metadata={"": sp.utils.bytes_of_string('self.data.art_proposal_details[_art_proposal_id].art_metadata')},
+                        metadata={self.data.art_proposal_details[_art_proposal_id].art_metadata: sp.bytes("0x0dae11")},
                     ),
                     sp.tez(0),
                     c,
