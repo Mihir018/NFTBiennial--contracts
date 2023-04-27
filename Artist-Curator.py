@@ -28,7 +28,7 @@ class MainContract(sp.Contract):
             # It will map the ids of the proposed arts of the artist to their address
             art_proposal_ids = sp.big_map(l ={},tkey = sp.TAddress, tvalue = sp.TSet(t=sp.TNat)),
 
-            art_proposal_details = sp.big_map(l ={},tkey = sp.TNat, tvalue = sp.TRecord(artist = sp.TAddress,art_metadata = sp.TString,price=sp.TNat,time_of_creation=sp.TTimestamp,time_of_expiration=sp.TTimestamp,curators_in_favour=sp.TSet(t=sp.TAddress),curators_in_against=sp.TSet(t=sp.TAddress),is_accepted=sp.TBool,is_minted=sp.TBool)),
+            art_proposal_details = sp.big_map(l ={},tkey = sp.TNat, tvalue = sp.TRecord(artist = sp.TAddress,art_metadata = sp.TBytes,price=sp.TNat,time_of_creation=sp.TTimestamp,time_of_expiration=sp.TTimestamp,curators_in_favour=sp.TSet(t=sp.TAddress),curators_in_against=sp.TSet(t=sp.TAddress),is_accepted=sp.TBool,is_minted=sp.TBool)),
             
             art_proposal_counter = sp.nat(0),
             
@@ -67,7 +67,7 @@ class MainContract(sp.Contract):
         self.check_is_paused()
 
         #Take from params the time of expiration
-        sp.set_type(params, sp.TRecord(_art_metadata =sp.TString,_art_price=sp.TNat,_time_of_expiration=sp.TTimestamp))
+        sp.set_type(params, sp.TRecord(_art_metadata =sp.TBytes,_art_price=sp.TNat,_time_of_expiration=sp.TTimestamp))
 
         self.data.art_proposal_counter+=1
         
@@ -254,7 +254,7 @@ class MainContract(sp.Contract):
                         token_id=self.data.mint_index,
                         amount=self.data.art_proposal_details[_art_proposal_id].price,
                         address=sp.sender,
-                        metadata={self.data.art_proposal_details[_art_proposal_id].art_metadata: sp.bytes("0x0dae11")},
+                        metadata={"": self.data.art_proposal_details[_art_proposal_id].art_metadata},
                     ),
                     sp.tez(0),
                     c,
@@ -295,8 +295,8 @@ def test():
     scenario += dao.toggle_pause().run(sender=admin)
     scenario += dao.toggle_pause().run(sender=admin)
     
-    scenario += dao.art_proposal(_art_metadata = "ipfs://bafkreibionfgfh3rswqgrkpzqh5c7ztrlla2nkjwtbk37m6vmngljdtpw4",_art_price=5,_time_of_expiration = sp.timestamp(28)).run(sender = alice)
-    scenario += dao.art_proposal(_art_metadata = "abncjdklfjs",_art_price=5,_time_of_expiration = sp.timestamp(28)).run(sender = charles)
+    scenario += dao.art_proposal(_art_metadata = sp.bytes("0xdaad"),_art_price=5,_time_of_expiration = sp.timestamp(28)).run(sender = alice)
+    scenario += dao.art_proposal(_art_metadata = sp.bytes('0x30'),_art_price=5,_time_of_expiration = sp.timestamp(28)).run(sender = charles)
     scenario += dao.curator_proposal("xyzjloiufd").run(sender = bob)
     scenario += dao.accept_curator(sp.address("tz1hJgZdhnRGvg5XD6pYxRCsbWh4jg5HQ476")).run(sender = admin)
     scenario += dao.reject_curator(sp.address("tz1hJgZdhnRGvg5XD6pYxRCsbWh4jg5HQ476")).run(sender = admin,valid=False)
