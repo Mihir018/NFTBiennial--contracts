@@ -26,14 +26,14 @@ class MainContract(sp.Contract):
             min_voting_percent = sp.nat(70),
 
             # It will map the ids of the proposed arts of the artist to their address
-            art_proposal_ids = sp.big_map(l ={},tkey = sp.TAddress, tvalue = sp.TSet(t=sp.TNat)),
+            art_proposal_ids = sp.map(l ={},tkey = sp.TAddress, tvalue = sp.TSet(t=sp.TNat)),
 
-            art_proposal_details = sp.big_map(l ={},tkey = sp.TNat, tvalue = sp.TRecord(artist = sp.TAddress,art_metadata = sp.TBytes,price=sp.TNat,time_of_creation=sp.TTimestamp,time_of_expiration=sp.TTimestamp,curators_in_favour=sp.TSet(t=sp.TAddress),curators_in_against=sp.TSet(t=sp.TAddress),is_accepted=sp.TBool,is_minted=sp.TBool)),
+            art_proposal_details = sp.map(l ={},tkey = sp.TNat, tvalue = sp.TRecord(artist = sp.TAddress,art_metadata = sp.TBytes,price=sp.TNat,time_of_creation=sp.TTimestamp,time_of_expiration=sp.TTimestamp,curators_in_favour=sp.TSet(t=sp.TAddress),curators_in_against=sp.TSet(t=sp.TAddress),is_accepted=sp.TBool,is_minted=sp.TBool)),
             
             art_proposal_counter = sp.nat(0),
             
             #curator proposal mapped to their address
-            curator_proposal_details = sp.big_map(l ={},tkey = sp.TAddress, tvalue = sp.TRecord(curator_description_cid = sp.TString,time_of_creation = sp.TTimestamp,is_voted=sp.TBool)),
+            curator_proposal_details = sp.map(l ={},tkey = sp.TAddress, tvalue = sp.TRecord(curator_description_cid = sp.TString,time_of_creation = sp.TTimestamp,is_voted=sp.TBool)),
             
         )
 
