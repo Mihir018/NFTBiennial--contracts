@@ -18,9 +18,6 @@ class MainContract(sp.Contract):
             
             curators=sp.set(t=sp.TAddress),
 
-            #The art ids that can be minted
-            minted_art_ids=sp.set(t=sp.TNat),
-
             #Unique id of each minted NFT
             mint_index = sp.nat(0),
 
@@ -30,12 +27,12 @@ class MainContract(sp.Contract):
             # It will map the ids of the proposed arts of the artist to their address
             art_proposal_ids = sp.map(l ={},tkey = sp.TAddress, tvalue = sp.TSet(t=sp.TNat)),
 
-            art_proposal_details = sp.map(l ={},tkey = sp.TNat, tvalue = sp.TRecord(artist = sp.TAddress,art_metadata = sp.TBytes,price=sp.TNat,time_of_creation=sp.TTimestamp,time_of_expiration=sp.TTimestamp,curators_in_favour=sp.TSet(t=sp.TAddress),curators_in_against=sp.TSet(t=sp.TAddress),is_accepted=sp.TBool,is_minted=sp.TBool)),
+            art_proposal_details = sp.map(l ={},tkey = sp.TNat, tvalue = sp.TRecord(artist = sp.TAddress,art_metadata = sp.TBytes,price=sp.TNat,time_of_creation=sp.TTimestamp,time_of_expiration=sp.TTimestamp,curators_in_favour=sp.TSet(t=sp.TAddress),curators_in_against=sp.TSet(t=sp.TAddress),is_minted=sp.TBool)),
             
             art_proposal_counter = sp.nat(0),
             
             #curator proposal mapped to their address
-            curator_proposal_details = sp.map(l ={},tkey = sp.TAddress, tvalue = sp.TRecord(curator_description_cid = sp.TString,time_of_creation = sp.TTimestamp,is_voted=sp.TBool)),
+            # curator_proposal_details = sp.map(l ={},tkey = sp.TAddress, tvalue = sp.TRecord(curator_description_cid = sp.TString,time_of_creation = sp.TTimestamp,is_voted=sp.TBool)),
             
         )
 
@@ -73,7 +70,7 @@ class MainContract(sp.Contract):
 
         self.data.art_proposal_counter+=1
         
-        self.data.art_proposal_details[self.data.art_proposal_counter] = sp.record(artist = sp.sender,art_metadata = params._art_metadata, price = params._art_price,time_of_creation = sp.now, time_of_expiration = params._time_of_expiration, curators_in_favour = sp.set(),curators_in_against = sp.set(),is_accepted=False,is_minted=False)
+        self.data.art_proposal_details[self.data.art_proposal_counter] = sp.record(artist = sp.sender,art_metadata = params._art_metadata, price = params._art_price,time_of_creation = sp.now, time_of_expiration = params._time_of_expiration, curators_in_favour = sp.set(),curators_in_against = sp.set(),is_minted=False)
 
         sp.if ~self.data.art_proposal_ids.contains(sp.sender):
             
@@ -84,15 +81,15 @@ class MainContract(sp.Contract):
             self.data.art_proposal_ids[sp.sender].add(self.data.art_proposal_counter)
 
     # Creating curator proposal
-    @sp.entry_point
-    def curator_proposal(self,_curator_description_cid):
+    # @sp.entry_point
+    # def curator_proposal(self,_curator_description_cid):
 
-        #Checking if the contract is allowed to run by the admin
-        self.check_is_paused()
+    #     #Checking if the contract is allowed to run by the admin
+    #     self.check_is_paused()
 
-        sp.verify(~self.data.curators.contains(sp.sender), message="Already a curator")
+    #     sp.verify(~self.data.curators.contains(sp.sender), message="Already a curator")
         
-        self.data.curator_proposal_details[sp.sender] = sp.record(curator_description_cid = _curator_description_cid,time_of_creation=sp.now,is_voted=False)
+    #     self.data.curator_proposal_details[sp.sender] = sp.record(curator_description_cid = _curator_description_cid,time_of_creation=sp.now,is_voted=False)
 
 
     # Voting in favour of the art by the curator
@@ -163,8 +160,11 @@ class MainContract(sp.Contract):
         # Check if the admin executed the entry point 
         self.check_is_admin()
 
+        # Check if already a curator
+        sp.verify(~self.data.curators.contains(_curator_address))
+
         #Checking if already voted by the admin
-        sp.verify(self.data.curator_proposal_details[_curator_address].is_voted == False,"Already voted by the admin")
+        # sp.verify(self.data.curator_proposal_details[_curator_address].is_voted == False,"Already voted by the admin")
 
         #Adding the curator to the list of the curators
         sp.if sp.len(self.data.curators) == 0:
@@ -177,23 +177,23 @@ class MainContract(sp.Contract):
 
         
         #Changing the value of is_voted to note the voting done by the admin
-        self.data.curator_proposal_details[_curator_address].is_voted = True
+        # self.data.curator_proposal_details[_curator_address].is_voted = True
 
     # Rejecting the curator( by the admin )
-    @sp.entry_point
-    def reject_curator(self,_curator_address):
+    # @sp.entry_point
+    # def reject_curator(self,_curator_address):
 
-        #Checking if the contract is allowed to run by the admin
-        self.check_is_paused()
+    #     #Checking if the contract is allowed to run by the admin
+    #     self.check_is_paused()
 
-        # Check if the admin executed the entry point 
-        self.check_is_admin()
+    #     # Check if the admin executed the entry point 
+    #     self.check_is_admin()
 
-        #Checking if already voted by the admin
-        sp.verify(self.data.curator_proposal_details[_curator_address].is_voted == False,"Already voted by the admin")
+    #     #Checking if already voted by the admin
+    #     sp.verify(self.data.curator_proposal_details[_curator_address].is_voted == False,"Already voted by the admin")
 
-        #Changing the value of is_voted to note the voting done by the admin
-        self.data.curator_proposal_details[_curator_address].is_voted = True
+    #     #Changing the value of is_voted to note the voting done by the admin
+    #     self.data.curator_proposal_details[_curator_address].is_voted = True
 
     # Removing the curator from the current list of curators( by the admin )
     @sp.entry_point
@@ -215,14 +215,13 @@ class MainContract(sp.Contract):
         #Checking if the contract is allowed to run by the admin
         self.check_is_paused()
         
-        
         #Checking if the time the curator is voting is less than the art_voting_time
         sp.verify(self.data.art_proposal_details[_art_proposal_id].time_of_expiration<sp.now,"Minting is only possible once the expiration time has crossed")
 
         #Check if the artist is calling
         sp.verify(self.data.art_proposal_ids[sp.sender].contains(_art_proposal_id))
 
-        sp.verify(sp.len(self.data.art_proposal_details[_art_proposal_id].curators_in_favour)/sp.len(self.data.curators)*100>=self.data.min_voting_percent)
+        sp.verify((sp.len(self.data.art_proposal_details[_art_proposal_id].curators_in_favour)*100)/(sp.len(self.data.art_proposal_details[_art_proposal_id].curators_in_favour)+sp.len(self.data.art_proposal_details[_art_proposal_id].curators_in_against))>=self.data.min_voting_percent)
 
         #Check if already minted
         sp.verify(self.data.art_proposal_details[_art_proposal_id].is_minted == False,"Already minted")
@@ -230,14 +229,7 @@ class MainContract(sp.Contract):
         ##Changing the value of is_minted to note the minting done by the artist
         self.data.art_proposal_details[_art_proposal_id].is_minted = True
 
-        #Noting the minted art ids
-        sp.if sp.len(self.data.minted_art_ids) == 0:
-            
-            self.data.minted_art_ids = sp.set([_art_proposal_id], t = sp.TNat)
-            
-        sp.else:
-
-            self.data.minted_art_ids.add(_art_proposal_id)
+        
 
         # Inter-contract call take place here to mint the artwork
         
@@ -262,6 +254,7 @@ class MainContract(sp.Contract):
                     sp.tez(0),
                     c,
                 )
+        
         self.data.mint_index += 1
 
 
@@ -307,6 +300,7 @@ def test():
     alice = sp.test_account("alice")
     bob = sp.test_account("bob")
     charles = sp.test_account("charles")
+    david = sp.test_account("david")
 
 
     # Create contract
@@ -321,12 +315,18 @@ def test():
     
     scenario += dao.art_proposal(_art_metadata = sp.bytes("0xdaad"),_art_price=5,_time_of_expiration = sp.timestamp(28)).run(sender = alice)
     scenario += dao.art_proposal(_art_metadata = sp.bytes('0x30'),_art_price=5,_time_of_expiration = sp.timestamp(28)).run(sender = charles)
-    scenario += dao.curator_proposal("xyzjloiufd").run(sender = bob)
+    # scenario += dao.curator_proposal("xyzjloiufd").run(sender = bob)
+    # scenario += dao.curator_proposal("xyzjloiufd").run(sender = charles)
     scenario += dao.accept_curator(sp.address("tz1hJgZdhnRGvg5XD6pYxRCsbWh4jg5HQ476")).run(sender = admin)
-    scenario += dao.reject_curator(sp.address("tz1hJgZdhnRGvg5XD6pYxRCsbWh4jg5HQ476")).run(sender = admin,valid=False)
+    scenario += dao.accept_curator(sp.address("tz1Yo685WVc1KNP4NXQ7JR9sxLxxBhn3LBVA")).run(sender = admin)
+    scenario += dao.accept_curator(sp.address("tz1SRacrDH9VUbaqWSL68TYNiC6UMHZS7KHB")).run(sender = admin)
+    
+    # scenario += dao.reject_curator(sp.address("tz1hJgZdhnRGvg5XD6pYxRCsbWh4jg5HQ476")).run(sender = admin,valid=False)
     scenario += dao.vote_on_artproposal(1).run(sender = bob,now= sp.timestamp(20))
+    scenario += dao.vote_against_artproposal(1).run(sender = charles,now= sp.timestamp(20))
+    scenario += dao.vote_against_artproposal(1).run(sender = david,now= sp.timestamp(20))
     scenario += dao.vote_on_artproposal(2).run(sender = bob, now = sp.timestamp(20))
-    scenario += dao.art_mint(1).run(sender = alice,now = sp.timestamp(32))
+    scenario += dao.art_mint(1).run(sender = alice,now = sp.timestamp(32),valid=False)
     scenario += dao.art_mint(2).run(sender = charles, now = sp.timestamp(32))
     scenario += dao.revoke_curator(sp.address("tz1hJgZdhnRGvg5XD6pYxRCsbWh4jg5HQ476")).run(sender = admin)
     scenario += dao.change_min_voting(30).run(sender = admin)
