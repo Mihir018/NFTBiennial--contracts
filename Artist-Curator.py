@@ -5,12 +5,13 @@ addresses = sp.io.import_stored_contract('addresses.py')
 
 class MainContract(sp.Contract):
     
-    def __init__(self,  nft_contract_address=addresses.NFT, mint_index = sp.nat(0)):
+    def __init__(self,  nft_contract_address=addresses.NFT):
         self.init(
 
             #The admin who will be able to accept the curators
             admin = sp.address("tz1QXAR4RsVTXYU75XBU9ctMYkWYFnZYbgzk"),
-            
+
+            #Contract is paused or not
             pause = sp.bool(False),
 
             nft_contract_address=nft_contract_address,   
@@ -20,10 +21,11 @@ class MainContract(sp.Contract):
             #The art ids that can be minted
             minted_art_ids=sp.set(t=sp.TNat),
 
-            mint_index = mint_index,
+            #Unique id of each minted NFT
+            mint_index = sp.nat(0),
 
             # Minimum percentage of votes set by the user
-            min_voting_percent = sp.nat(70),
+            min_voting_percent = sp.nat(40),
 
             # It will map the ids of the proposed arts of the artist to their address
             art_proposal_ids = sp.map(l ={},tkey = sp.TAddress, tvalue = sp.TSet(t=sp.TNat)),
@@ -237,7 +239,8 @@ class MainContract(sp.Contract):
 
             self.data.minted_art_ids.add(_art_proposal_id)
 
-        #Inter-contract call take place here to mint the artwork
+        # Inter-contract call take place here to mint the artwork
+        
         c = sp.contract(
             sp.TRecord(
                 token_id=sp.TNat,
@@ -260,6 +263,27 @@ class MainContract(sp.Contract):
                     c,
                 )
         self.data.mint_index += 1
+
+
+    #To change the minimum voting percent
+    @sp.entry_point
+    def change_min_voting(self,_min_voting_percent):
+
+        # Check if the admin executed the entry point 
+        self.check_is_admin()
+
+        # Changing minimum voting percentage
+        self.data.min_voting_percent = _min_voting_percent;
+
+    #To change the admin
+    @sp.entry_point
+    def change_admin(self,_admin):
+
+        # Check if the admin executed the entry point 
+        self.check_is_admin()
+
+        # Changing admin address
+        self.data.admin = _admin
 
         
     #To toggle the current status of the contract so that it can be stopped or resumed
@@ -305,4 +329,6 @@ def test():
     scenario += dao.art_mint(1).run(sender = alice,now = sp.timestamp(32))
     scenario += dao.art_mint(2).run(sender = charles, now = sp.timestamp(32))
     scenario += dao.revoke_curator(sp.address("tz1hJgZdhnRGvg5XD6pYxRCsbWh4jg5HQ476")).run(sender = admin)
+    scenario += dao.change_min_voting(30).run(sender = admin)
+    scenario += dao.change_admin(sp.address("tz1hJgZdhnRGvg5XD6pYxRCsbWh4jg5HQ476")).run(sender = admin)
     
