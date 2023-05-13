@@ -28,7 +28,7 @@ class MainContract(sp.Contract):
             min_voting_percent = sp.nat(40),
             
             # For storing profile details
-            profile = sp.map(l ={},tkey = sp.TAddress, tvalue = sp.TRecord(name = sp.TString, image = sp.TBytes)),
+            profile = sp.map(l ={},tkey = sp.TAddress, tvalue = sp.TBytes),
 
             # It will map the ids of the proposed arts of the artist to their address
             art_proposal_ids = sp.map(l ={},tkey = sp.TAddress, tvalue = sp.TSet(t=sp.TNat)),
@@ -68,15 +68,12 @@ class MainContract(sp.Contract):
 
     # For creating profile of artist, curators and collectors
     @sp.entry_point
-    def create_profile(self,params):
+    def create_profile(self,_profile_metadata):
         
         #Checking if the contract is allowed to run by the admin
         self.check_is_paused()
 
-        #Take from params the time of expiration
-        sp.set_type(params, sp.TRecord(_name = sp.TString,_image =sp.TBytes))
-
-        self.data.profile[sp.sender] = sp.record(name = params._name, image = params._image)
+        self.data.profile[sp.sender] = _profile_metadata
         
 
     # Creating art proposal
@@ -353,6 +350,6 @@ def test():
     scenario += dao.change_min_voting(30).run(sender = admin)
     scenario += dao.change_admin(sp.address("tz1hJgZdhnRGvg5XD6pYxRCsbWh4jg5HQ476")).run(sender = admin)
 
-    scenario += dao.create_profile(_name = "Ankit",_image = sp.bytes('0x30')).run(sender = charles)
-    scenario += dao.create_profile(_name = "Charles",_image = sp.bytes('0x30')).run(sender = charles)
-    scenario += dao.create_profile(_name = "Bob",_image = sp.bytes('0x30')).run(sender = bob)
+    scenario += dao.create_profile(sp.bytes('0x30')).run(sender = charles)
+    scenario += dao.create_profile(sp.bytes('0x31')).run(sender = charles)
+    scenario += dao.create_profile(sp.bytes('0x32')).run(sender = bob)
