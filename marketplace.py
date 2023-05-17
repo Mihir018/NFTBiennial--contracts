@@ -2,6 +2,7 @@ import smartpy as sp
 
 # Import the modified FA2 contract
 FA2_contract = sp.io.import_stored_contract('FA2.py')
+# voting_contract = sp.io.import_stored_contract('voting.py')
 
 def global_parameter(env_var, default):
     try:
@@ -130,6 +131,7 @@ class Marketplace(sp.Contract):
             mods = sp.set(mods),
             fund_operator = fund_operator,
             next_ask_id = sp.nat(0),
+            vote_contract = sp.address("KT1GVQKcUp4EnLysqsGg2X66Rdhi2VuVtGDS"),
             asks = Ask().set_type(),
             next_offer_id = sp.nat(0),
             offers = Offer().set_type(),
@@ -169,6 +171,12 @@ class Marketplace(sp.Contract):
     
     def is_paused(self):
         sp.verify(~self.data.pause, "CONTRACT_PAUSED")
+
+    @sp.entry_point
+    def retrieve_curators(self):
+        # curator_value = self.data.vote_contract.getCuratorDetails().open_some()
+        curator_details = sp.view("getCuratorDetails", self.data.vote_contract, 0, t = sp.TSet(t = sp.TAddress)).open_some("Invalid view");
+        
     
     @sp.entry_point
     def add_moderator(self, _moderator):
