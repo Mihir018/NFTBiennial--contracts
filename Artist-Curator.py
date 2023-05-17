@@ -1,11 +1,11 @@
 import smartpy as sp
 FA2_contract = sp.io.import_stored_contract('FA2.py')
-addresses = sp.io.import_stored_contract('addresses.py')
+# addresses = sp.io.import_stored_contract('addresses.py')
 
 
 class MainContract(sp.Contract):
     
-    def __init__(self,  nft_contract_address=addresses.NFT):
+    def __init__(self,  nft_contract_address=sp.address('KT1TsmpeuXAmKrGH1bMgj71Envfen2HDLRos')):
     # def __init__(self):
         self.init(
 
@@ -65,6 +65,10 @@ class MainContract(sp.Contract):
         """
         sp.verify(self.data.pause == False, message="CONTRACT_PAUSED")
 
+    @sp.onchain_view()
+    def getCuratorDetails(self):
+        return sp.result(self.data.curators)
+        # sp.result(sp.len(self.data.curators))
 
     # For creating profile of artist, curators and collectors
     @sp.entry_point
@@ -338,6 +342,11 @@ def test():
     scenario += dao.accept_curator(sp.address("tz1hJgZdhnRGvg5XD6pYxRCsbWh4jg5HQ476")).run(sender = admin)
     scenario += dao.accept_curator(sp.address("tz1Yo685WVc1KNP4NXQ7JR9sxLxxBhn3LBVA")).run(sender = admin)
     scenario += dao.accept_curator(sp.address("tz1SRacrDH9VUbaqWSL68TYNiC6UMHZS7KHB")).run(sender = admin)
+    curator_details = dao.getCuratorDetails().open_some().item
+    curator_set = sp.set()  # Initialize an empty set
+    curator_set = sp.set(curator_details.value)  # Convert to set if some value exists
+    scenario.verify(curator_set == set(dao.storage.curators))
+
     
     # scenario += dao.reject_curator(sp.address("tz1hJgZdhnRGvg5XD6pYxRCsbWh4jg5HQ476")).run(sender = admin,valid=False)
     scenario += dao.vote_on_artproposal(1).run(sender = bob,now= sp.timestamp(20))
