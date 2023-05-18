@@ -1,6 +1,6 @@
 import smartpy as sp
 FA2_contract = sp.io.import_stored_contract('FA2.py')
-# addresses = sp.io.import_stored_contract('addresses.py')
+addresses = sp.io.import_stored_contract('addresses.py')
 
 
 class MainContract(sp.Contract):
