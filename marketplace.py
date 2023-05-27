@@ -71,7 +71,7 @@ class Ask:
             shares = sp.TList(Share().get_type())
         )
 
-    def set_type(self): return sp.big_map(l = {}, tkey = sp.TNat, tvalue = self.type_value)
+    def set_type(self): return sp.map(l = {}, tkey = sp.TNat, tvalue = self.type_value)
     
     def set_value(self, _params):
         return sp.record(
@@ -96,7 +96,7 @@ class Offer:
             shares = sp.TList(Share().get_type())
         )
     
-    def set_type(self): return sp.big_map(l = {}, tkey = sp.TNat, tvalue = self.type_value)
+    def set_type(self): return sp.map(l = {}, tkey = sp.TNat, tvalue = self.type_value)
 
     def set_value(self, _params):
         return sp.record(
@@ -131,13 +131,13 @@ class Marketplace(sp.Contract):
             mods = sp.set(mods),
             fund_operator = fund_operator,
             next_ask_id = sp.nat(0),
-            vote_contract = sp.address("KT1GVQKcUp4EnLysqsGg2X66Rdhi2VuVtGDS"),
+            vote_contract = sp.address("KT1XYEGB9FRBEKx3wsHMmohpXRc68VNBty79"),
             asks = Ask().set_type(),
             next_offer_id = sp.nat(0),
             offers = Offer().set_type(),
             platform_fees = sp.nat(20000),
             pause = sp.bool(False),
-            default_split = sp.big_map(l={}, tkey = sp.TString, tvalue = sp.TRecord(address = sp.TList(sp.TAddress),
+            default_split = sp.map(l={}, tkey = sp.TString, tvalue = sp.TRecord(address = sp.TList(sp.TAddress),
                                                                                    amount = sp.TNat)),
         )
 
@@ -323,12 +323,12 @@ def test():
     sc = sp.test_scenario()
     sc.h1("NFT-Biennial NFT Collection Marketplace")
     sc.table_of_contents()
-    admin           =   sp.address("tz1ooADMIN")
+    admin           =   sp.address("tz1QXAR4RsVTXYU75XBU9ctMYkWYFnZYbgzk")
     alice           =   sp.address("tz1ooALICE")
     bob             =   sp.address("tz1ooBOB")
     elon            =   sp.address("tz1ooELON")
     mark            =   sp.address("tz1ooMARK")
-    fund_operator   =   sp.address("tz1ooFUNDoOP")
+    fund_operator   =   sp.address("tz1QXAR4RsVTXYU75XBU9ctMYkWYFnZYbgzk")
     
     sc.show([admin, alice, bob, mark, elon, fund_operator])
     get_share = Share()
