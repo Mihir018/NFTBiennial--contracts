@@ -34,7 +34,7 @@ class MainContract(sp.Contract):
             art_proposal_ids = sp.map(l ={},tkey = sp.TAddress, tvalue = sp.TSet(t=sp.TNat)),
 
             # For storing art proposal details
-            art_proposal_details = sp.map(l ={},tkey = sp.TNat, tvalue = sp.TRecord(artist = sp.TAddress,art_metadata = sp.TBytes,price=sp.TNat,time_of_creation=sp.TTimestamp,time_of_expiration=sp.TTimestamp,curators_in_favour=sp.TSet(t=sp.TAddress),curators_in_against=sp.TSet(t=sp.TAddress),is_minted=sp.TBool)),
+            art_proposal_details = sp.map(l ={},tkey = sp.TNat, tvalue = sp.TRecord(artist = sp.TAddress,art_metadata = sp.TBytes,price=sp.TNat, mint_index = sp.TNat, time_of_creation=sp.TTimestamp,time_of_expiration=sp.TTimestamp,curators_in_favour=sp.TSet(t=sp.TAddress),curators_in_against=sp.TSet(t=sp.TAddress),is_minted=sp.TBool)),
 
             # For storing the number of art proposals
             art_proposal_counter = sp.nat(0),
@@ -92,7 +92,7 @@ class MainContract(sp.Contract):
 
         self.data.art_proposal_counter+=1
         
-        self.data.art_proposal_details[self.data.art_proposal_counter] = sp.record(artist = sp.sender,art_metadata = params._art_metadata, price = params._art_price,time_of_creation = sp.now, time_of_expiration = params._time_of_expiration, curators_in_favour = sp.set(),curators_in_against = sp.set(),is_minted=False)
+        self.data.art_proposal_details[self.data.art_proposal_counter] = sp.record(artist = sp.sender,art_metadata = params._art_metadata, price = params._art_price, mint_index = sp.nat(0), time_of_creation = sp.now, time_of_expiration = params._time_of_expiration, curators_in_favour = sp.set(),curators_in_against = sp.set(),is_minted=False)
 
         sp.if ~self.data.art_proposal_ids.contains(sp.sender):
             
@@ -250,7 +250,7 @@ class MainContract(sp.Contract):
 
         ##Changing the value of is_minted to note the minting done by the artist
         self.data.art_proposal_details[_art_proposal_id].is_minted = True
-
+        self.data.art_proposal_details[_art_proposal_id].mint_index = self.data.mint_index
         
 
         # Inter-contract call take place here to mint the artwork
