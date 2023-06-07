@@ -86,6 +86,9 @@ class MainContract(sp.Contract):
             
         #Checking if the contract is allowed to run by the admin
         self.check_is_paused()
+        
+        #Curators can't propose artwork
+        sp.verify(~self.data.curators.contains(sp.sender), message="Curators can't propose artwork")
 
         #Take from params the time of expiration
         sp.set_type(params, sp.TRecord(_art_metadata =sp.TBytes,_art_price=sp.TNat,_editions=sp.TNat,_time_of_expiration=sp.TTimestamp))
