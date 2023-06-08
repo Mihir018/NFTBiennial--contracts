@@ -87,6 +87,9 @@ class MainContract(sp.Contract):
         #Checking if the contract is allowed to run by the admin
         self.check_is_paused()
         
+        #Check if a profile exists
+        sp.verify(self.data.profile.contains(sp.sender), message="Make a profile to proceed")
+        
         #Curators can't propose artwork
         sp.verify(~self.data.curators.contains(sp.sender), message="Curators can't propose artwork")
 
@@ -123,6 +126,9 @@ class MainContract(sp.Contract):
 
         #Checking if the contract is allowed to run by the admin
         self.check_is_paused()
+        
+        #Check if a profile exists
+        sp.verify(self.data.profile.contains(sp.sender), message="Make a profile to proceed")
 
         # Check that one of the curators executed the entry point 
         self.check_is_curator()
@@ -152,6 +158,9 @@ class MainContract(sp.Contract):
 
         #Checking if the contract is allowed to run by the admin
         self.check_is_paused()
+        
+        #Check if a profile exists
+        sp.verify(self.data.profile.contains(sp.sender), message="Make a profile to proceed")
 
         # Check that one of the curators executed the entry point 
         self.check_is_curator()
@@ -239,6 +248,9 @@ class MainContract(sp.Contract):
         
         #Checking if the contract is allowed to run by the admin
         self.check_is_paused()
+        
+        #Check if a profile exists
+        sp.verify(self.data.profile.contains(sp.sender), message="Make a profile to proceed")
         
         #Checking if the time the curator is voting is less than the art_voting_time
         sp.verify(self.data.art_proposal_details[_art_proposal_id].time_of_expiration<sp.now,"Minting is only possible once the expiration time has crossed")
